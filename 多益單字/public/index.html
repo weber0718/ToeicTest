@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <title>TOEIC Vocab Master｜多益單字智慧測驗與錯題本系統</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 頂部導覽列 -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand" id="brandHomeBtn" title="回到學習總覽">
+        <div class="brand-logo">🎯</div>
+        <div>
+          <h1 class="brand-title">TOEIC Vocab Master</h1>
+          <p class="brand-subtitle">多益高頻單字測驗 &amp; 智慧錯題追蹤系統</p>
+        </div>
+      </div>
+
+      <nav class="main-nav" id="mainNav">
+        <button class="nav-btn active" data-tab="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>學習總覽</span>
+        </button>
+        <button class="nav-btn" data-tab="mc-quiz">
+          <span class="nav-icon">📝</span>
+          <span>四選一測驗</span>
+        </button>
+        <button class="nav-btn" data-tab="spelling-quiz">
+          <span class="nav-icon">🎧</span>
+          <span>聽力拼字</span>
+        </button>
+        <button class="nav-btn" data-tab="notebook">
+          <span class="nav-icon">📕</span>
+          <span>錯題本</span>
+          <span class="nav-badge" id="navWrongBadge">0</span>
+        </button>
+        <button class="nav-btn" data-tab="flashcards">
+          <span class="nav-icon">🗂️</span>
+          <span>單字卡與題庫</span>
+        </button>
+      </nav>
+
+      <div class="user-panel">
+        <div class="db-status" id="dbStatusBadge" title="資料儲存狀態">
+          <span class="status-dot"></span>
+          <span id="dbStatusText">連線中...</span>
+        </div>
+        <div class="user-info" id="userInfoBox">
+          <span class="user-avatar" id="userAvatar">👤</span>
+          <div class="user-meta">
+            <span class="user-name" id="headerUserName">未登入</span>
+            <span class="user-target" id="headerUserTarget">請先登入</span>
+          </div>
+          <button class="btn btn-sm btn-outline" id="exportDataBtn" title="匯出學習紀錄與錯題本備份檔">📤 備份</button>
+          <button class="btn btn-sm btn-outline" id="importDataBtn" title="匯入學習紀錄與錯題本備份檔">📥 還原</button>
+          <input type="file" id="importFileInput" accept=".json" class="hidden" />
+          <button class="btn btn-sm btn-outline" id="authActionBtn">登入</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要內容區 -->
+  <main class="main-container">
+    <!-- ==================== 1. 學習總覽 (Dashboard) ==================== -->
+    <section class="tab-panel active" id="tab-dashboard">
+      <div class="hero-banner">
+        <div class="hero-text">
+          <div class="hero-tag" id="dashboardGreetingTag">✨ 歡迎回來，準備好衝刺多益金色證書了嗎？</div>
+          <h2 id="dashboardWelcomeTitle">哈囉！開始今天的多益單字特訓吧</h2>
+          <p class="hero-desc">
+            系統會自動記錄您每次測驗的答題狀況，將答錯的單字收入個人專屬「<strong>錯題本</strong>」，並在複習重測連續答對 3 次後標記為「<strong>已熟練掌握</strong>」。
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" id="quickStartMcBtn">
+              🚀 立即開始 10 題四選一測驗
+            </button>
+            <button class="btn btn-warning btn-lg" id="quickReviewWrongBtn">
+              📕 錯題本專項複習 (<span id="heroWrongCount">0</span> 題待加強)
+            </button>
+            <button class="btn btn-secondary btn-lg" id="quickStartSpellingBtn">
+              🎧 聽力拼字填空特訓
+            </button>
+          </div>
+        </div>
+        <div class="hero-goal-card">
+          <div class="goal-header">
+            <span>🏆 目標多益分數</span>
+            <button class="btn-link" id="editGoalBtn" title="修改目標分數">修改</button>
+          </div>
+          <div class="goal-score" id="dashboardTargetScore">860 <span>分</span></div>
+          <div class="goal-Cert" id="dashboardCertBadge">🥇 金色證書目標</div>
+          <div class="goal-streak">
+            🔥 連續學習 <strong id="dashboardStreak">1</strong> 天
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 大統計指標卡 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">📝</div>
+          <div class="stat-content">
+            <div class="stat-label">累計完成測驗</div>
+            <div class="stat-value"><span id="statTotalQuizzes">0</span> <small>回</small></div>
+            <div class="stat-sub">共作答 <span id="statTotalQuestions">0</span> 題</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">🎯</div>
+          <div class="stat-content">
+            <div class="stat-label">總答題正確率</div>
+            <div class="stat-value"><span id="statAccuracy">0</span><small>%</small></div>
+            <div class="progress-mini">
+              <div class="progress-mini-bar" id="statAccuracyBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" id="statWrongCard">
+          <div class="stat-icon red">📕</div>
+          <div class="stat-content">
+            <div class="stat-label">待加強錯題數</div>
+            <div class="stat-value"><span id="statPendingWrong">0</span> <small>字</small></div>
+            <div class="stat-sub">點擊前往錯題本複習 →</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" id="statMasteredCard">
+          <div class="stat-icon gold">⭐</div>
+          <div class="stat-content">
+            <div class="stat-label">已熟練掌握錯題</div>
+            <div class="stat-value"><span id="statMasteredWrong">0</span> <small>字</small></div>
+            <div class="stat-sub">題庫總單字量：<span id="statTotalWords">80</span> 字</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-two-col">
+        <!-- 左欄：主題分類快速測驗 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📂 六大多益商務情境主題</h3>
+            <span class="text-muted">點擊任一主題直接開始專項測驗</span>
+          </div>
+          <div class="category-grid" id="dashboardCategoryGrid">
+            <!-- 由 JS 動態渲染 -->
+          </div>
+        </div>
+
+        <!-- 右欄：近期測驗歷史紀錄 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🕒 近期測驗歷史紀錄</h3>
+            <span class="text-muted" id="historyCountLabel">最近 0 筆紀錄</span>
+          </div>
+          <div class="history-list" id="dashboardHistoryList">
+            <!-- 由 JS 動態渲染 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. 四選一選擇題測驗 (MC Quiz) ==================== -->
+    <section class="tab-panel" id="tab-mc-quiz">
+      <!-- 設定面板 -->
+      <div class="card quiz-setup-card" id="mcSetupPanel">
+        <div class="card-header">
+          <h2>📝 多益單字四選一測驗設定</h2>
+          <p class="text-muted">支援英翻中、中翻英、多益 Part 5 例句挖空填空，答錯題目將自動同步至您的錯題本</p>
+        </div>
+
+        <div class="setup-form-grid">
+          <div class="form-group">
+            <label for="mcModeSelect">🎯 出題模式</label>
+            <select id="mcModeSelect" class="form-control">
+              <option value="mixed">🔀 綜合混合出題（推薦）</option>
+              <option value="en-zh">🇬🇧➡️🇹🇼 英翻中（看英文單字選中文意思）</option>
+              <option value="zh-en">🇹🇼➡️🇬🇧 中翻英（看中文意思選英文單字）</option>
+              <option value="sentence">📄 多益 Part 5 例句填空（看例句挖空選單字）</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mcCategorySelect">📂 題庫範圍</label>
+            <select id="mcCategorySelect" class="form-control">
+              <option value="ALL">📚 全部多益主題單字</option>
+              <option value="WRONG_PENDING">📕 僅測驗「待加強錯題」</option>
+              <option value="WRONG_ALL">📓 測驗「全部錯題本單字（含已熟練）」</option>
+              <option value="商務與合約">💼 商務與合約 (Business &amp; Contracts)</option>
+              <option value="財務與會計">💰 財務與會計 (Finance &amp; Accounting)</option>
+              <option value="人事與職場">👥 人事與職場 (HR &amp; Workplace)</option>
+              <option value="行銷與銷售">📣 行銷與銷售 (Marketing &amp; Sales)</option>
+              <option value="旅遊與交通">✈️ 旅遊與交通 (Travel &amp; Hospitality)</option>
+              <option value="科技與製造">⚙️ 科技與製造 (Tech &amp; Manufacturing)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mcLevelSelect">📊 難度分級</label>
+            <select id="mcLevelSelect" class="form-control">
+              <option value="ALL">全部難度（600分 ~ 860分+）</option>
+              <option value="600分基礎">🟢 600分基礎核心字彙</option>
+              <option value="750分進階">🔵 750分進階常考字彙</option>
+              <option value="860分高分">🟣 860分金色證書字彙</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mcCountSelect">🔢 測驗題數</label>
+            <select id="mcCountSelect" class="form-control">
+              <option value="5">5 題（快速熱身 1 分鐘）</option>
+              <option value="10" selected>10 題（標準練習 3 分鐘）</option>
+              <option value="15">15 題（進階強化 5 分鐘）</option>
+              <option value="20">20 題（深度模考 7 分鐘）</option>
+              <option value="30">30 題（完整挑戰 10 分鐘）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setup-options-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="mcAutoSpeakCheck" checked />
+            <span>🔊 出題與解答時自動朗讀英文發音</span>
+          </label>
+          <span class="keyboard-hint">💡 提示：測驗中可使用鍵盤數字鍵 <kbd>1</kbd> ~ <kbd>4</kbd> 作答，按 <kbd>Enter</kbd> 或 <kbd>Space</kbd> 進入下一題</span>
+        </div>
+
+        <div class="setup-footer">
+          <button class="btn btn-primary btn-xl" id="startMcQuizBtn">
+            ▶️ 開始四選一測驗
+          </button>
+        </div>
+      </div>
+
+      <!-- 測驗進行中面板 -->
+      <div class="card quiz-active-card hidden" id="mcActivePanel">
+        <div class="quiz-topbar">
+          <div class="quiz-progress-info">
+            <span class="badge badge-primary" id="mcProgressBadge">第 1 / 10 題</span>
+            <span class="badge badge-outline" id="mcCurrentModeBadge">英翻中</span>
+            <span class="badge badge-category" id="mcCurrentCategoryBadge">商務與合約</span>
+            <span class="badge badge-level" id="mcCurrentLevelBadge">750分進階</span>
+          </div>
+          <div class="quiz-stats-inline">
+            <span>⏱️ <strong id="mcTimerText">00:00</strong></span>
+            <span>✅ 答對 <strong id="mcCorrectCount">0</strong></span>
+            <span>❌ 答錯 <strong id="mcWrongCount">0</strong></span>
+            <button class="btn btn-sm btn-ghost" id="mcQuitBtn">結束測驗</button>
+          </div>
+        </div>
+
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="mcProgressBar" style="width: 10%"></div>
+        </div>
+
+        <!-- 題目區 -->
+        <div class="question-box">
+          <div class="question-prompt-label" id="mcPromptLabel">請選擇下列英文單字的正確中文解釋：</div>
+          <div class="question-main-row">
+            <div class="question-stem" id="mcQuestionStem">accommodate</div>
+            <button class="btn-audio" id="mcSpeakBtn" title="播放英文發音 (快捷鍵 S)">
+              🔊 發音
+            </button>
+          </div>
+          <div class="question-sub" id="mcQuestionSub">/əˈkɑːmədeɪt/ (v.)</div>
+        </div>
+
+        <!-- 選項區 -->
+        <div class="options-grid" id="mcOptionsContainer">
+          <!-- JS 動態產生 4 個選項 -->
+        </div>
+
+        <!-- 作答後即時詳解區 -->
+        <div class="explanation-box hidden" id="mcExplanationBox">
+          <div class="exp-header">
+            <div class="exp-status" id="mcExpStatus">✅ 答對了！</div>
+            <div class="exp-actions">
+              <button class="btn btn-sm btn-outline" id="mcToggleBookmarkBtn">
+                ⭐ 加入錯題本重點
+              </button>
+              <button class="btn btn-primary" id="mcNextQuestionBtn">
+                下一題 (Enter) ➡️
+              </button>
+            </div>
+          </div>
+          <div class="exp-body" id="mcExpBody">
+            <!-- JS 動態填入單字完整解析與例句 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 測驗結果結算面板 -->
+      <div class="card quiz-result-card hidden" id="mcResultPanel">
+        <!-- 由 JS 共用渲染或獨立渲染 -->
+      </div>
+    </section>
+
+    <!-- ==================== 3. 聽力／拼字填空測驗 (Spelling Quiz) ==================== -->
+    <section class="tab-panel" id="tab-spelling-quiz">
+      <!-- 設定面板 -->
+      <div class="card quiz-setup-card" id="spSetupPanel">
+        <div class="card-header">
+          <h2>🎧 多益聽力與拼字填空測驗</h2>
+          <p class="text-muted">聆聽英文標準發音並結合中英例句上下文，拼寫出正確的多益核心單字</p>
+        </div>
+
+        <div class="setup-form-grid">
+          <div class="form-group">
+            <label for="spCategorySelect">📂 題庫範圍</label>
+            <select id="spCategorySelect" class="form-control">
+              <option value="ALL">📚 全部多益主題單字</option>
+              <option value="WRONG_PENDING">📕 僅測驗「待加強錯題」</option>
+              <option value="WRONG_ALL">📓 測驗「全部錯題本單字」</option>
+              <option value="商務與合約">💼 商務與合約</option>
+              <option value="財務與會計">💰 財務與會計</option>
+              <option value="人事與職場">👥 人事與職場</option>
+              <option value="行銷與銷售">📣 行銷與銷售</option>
+              <option value="旅遊與交通">✈️ 旅遊與交通</option>
+              <option value="科技與製造">⚙️ 科技與製造</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="spLevelSelect">📊 難度分級</label>
+            <select id="spLevelSelect" class="form-control">
+              <option value="ALL">全部難度</option>
+              <option value="600分基礎">🟢 600分基礎核心字彙</option>
+              <option value="750分進階">🔵 750分進階常考字彙</option>
+              <option value="860分高分">🟣 860分金色證書字彙</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="spCountSelect">🔢 測驗題數</label>
+            <select id="spCountSelect" class="form-control">
+              <option value="5" selected>5 題（精準聽寫練習）</option>
+              <option value="10">10 題（標準聽寫訓練）</option>
+              <option value="15">15 題（進階強化訓練）</option>
+              <option value="20">20 題（深度拼字挑戰）</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="spAccentSelect">🗣️ 發音口音</label>
+            <select id="spAccentSelect" class="form-control">
+              <option value="en-US">🇺🇸 美式發音 (American English)</option>
+              <option value="en-GB">🇬🇧 英式發音 (British English)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setup-footer">
+          <button class="btn btn-primary btn-xl" id="startSpQuizBtn">
+            🎧 開始聽力拼字測驗
+          </button>
+        </div>
+      </div>
+
+      <!-- 聽力拼字進行中面板 -->
+      <div class="card quiz-active-card hidden" id="spActivePanel">
+        <div class="quiz-topbar">
+          <div class="quiz-progress-info">
+            <span class="badge badge-primary" id="spProgressBadge">第 1 / 5 題</span>
+            <span class="badge badge-category" id="spCurrentCategoryBadge">財務與會計</span>
+            <span class="badge badge-level" id="spCurrentLevelBadge">750分進階</span>
+          </div>
+          <div class="quiz-stats-inline">
+            <span>⏱️ <strong id="spTimerText">00:00</strong></span>
+            <span>✅ 答對 <strong id="spCorrectCount">0</strong></span>
+            <span>❌ 答錯 <strong id="spWrongCount">0</strong></span>
+            <button class="btn btn-sm btn-ghost" id="spQuitBtn">結束測驗</button>
+          </div>
+        </div>
+
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="spProgressBar" style="width: 20%"></div>
+        </div>
+
+        <div class="spelling-question-area">
+          <div class="audio-controls-large">
+            <button class="btn btn-primary btn-audio-lg" id="spPlayNormalBtn">
+              🔊 播放單字發音 (1.0x)
+            </button>
+            <button class="btn btn-outline btn-audio-lg" id="spPlaySlowBtn">
+              🐢 慢速播放 (0.75x)
+            </button>
+          </div>
+
+          <div class="spelling-meaning-box">
+            <span class="pos-tag" id="spPosTag">v.</span>
+            <span class="meaning-text" id="spMeaningText">報銷；償還；核銷（差旅費等）</span>
+          </div>
+
+          <div class="spelling-sentence-box">
+            <p class="sentence-en" id="spSentenceEn">
+              Please keep all original receipts so the company can <span class="blank-slot">_______</span> your travel expenses.
+            </p>
+            <p class="sentence-zh" id="spSentenceZh">
+              請保留所有收據正本，以便公司核銷您的差旅費用。
+            </p>
+          </div>
+
+          <div class="spelling-hint-bar" id="spHintBar">
+            字母提示：<span id="spHintPattern">_ _ _ _ _ _ _ _ _ (9 個字母)</span>
+            <button class="btn btn-sm btn-outline" id="spShowHintBtn">💡 提示首尾字母</button>
+          </div>
+
+          <form class="spelling-input-row" id="spSubmitForm">
+            <input
+              type="text"
+              id="spInput"
+              class="spelling-input"
+              placeholder="請輸入聽到的英文單字..."
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn btn-primary btn-lg" id="spSubmitBtn">
+              確認送出
+            </button>
+          </form>
+        </div>
+
+        <div class="explanation-box hidden" id="spExplanationBox">
+          <div class="exp-header">
+            <div class="exp-status" id="spExpStatus">✅ 拼字正確！</div>
+            <div class="exp-actions">
+              <button type="button" class="btn btn-primary" id="spNextQuestionBtn">
+                下一題 (Enter) ➡️
+              </button>
+            </div>
+          </div>
+          <div class="exp-body" id="spExpBody"></div>
+        </div>
+      </div>
+
+      <!-- 聽力拼字結算面板 -->
+      <div class="card quiz-result-card hidden" id="spResultPanel"></div>
+    </section>
+
+    <!-- ==================== 4. 錯題本專區 (Wrong Answer Notebook) ==================== -->
+    <section class="tab-panel" id="tab-notebook">
+      <div class="notebook-header-card card">
+        <div class="notebook-title-row">
+          <div>
+            <h2>📕 個人專屬錯題本與熟練度追蹤</h2>
+            <p class="text-muted">
+              測驗答錯的單字會自動收錄於此。在「錯題重測」中<strong>連續答對 3 次 (★★★)</strong> 即可升級為「已熟練掌握」！
+            </p>
+          </div>
+          <div class="notebook-quiz-actions">
+            <button class="btn btn-primary" id="nbRetestMcPendingBtn">
+              🔥 待加強錯題：四選一重測
+            </button>
+            <button class="btn btn-secondary" id="nbRetestSpPendingBtn">
+              🎧 待加強錯題：聽力拼字重測
+            </button>
+            <button class="btn btn-outline" id="nbRetestAllBtn">
+              🔄 全部錯題綜合重測
+            </button>
+          </div>
+        </div>
+
+        <div class="notebook-summary-strip">
+          <div class="nb-stat">
+            <span>錯題本總單字</span>
+            <strong id="nbTotalCount">0</strong>
+          </div>
+          <div class="nb-stat danger">
+            <span>🔥 待加強（未熟練）</span>
+            <strong id="nbPendingCount">0</strong>
+          </div>
+          <div class="nb-stat success">
+            <span>⭐ 已熟練掌握 (★★★)</span>
+            <strong id="nbMasteredCount">0</strong>
+          </div>
+          <div class="nb-stat warning">
+            <span>累計總錯誤次數</span>
+            <strong id="nbTotalErrors">0</strong>
+          </div>
+        </div>
+
+        <!-- 篩選與排序工具列 -->
+        <div class="notebook-toolbar">
+          <div class="filter-pills" id="nbStatusFilterPills">
+            <button class="pill active" data-filter="all">全部 (<span id="pillCountAll">0</span>)</button>
+            <button class="pill" data-filter="pending">🔥 待加強 (<span id="pillCountPending">0</span>)</button>
+            <button class="pill" data-filter="mastered">⭐ 已熟練 (<span id="pillCountMastered">0</span>)</button>
+          </div>
+
+          <div class="toolbar-right">
+            <input
+              type="text"
+              id="nbSearchInput"
+              class="form-control form-control-sm"
+              placeholder="🔍 搜尋錯題單字、解釋或筆記..."
+            />
+            <select id="nbSortSelect" class="form-control form-control-sm">
+              <option value="errors-desc">依錯誤次數（由多到少）</option>
+              <option value="recent-desc">依最後答錯時間（最新優先）</option>
+              <option value="streak-asc">依熟練度（待加強優先）</option>
+              <option value="word-asc">依字母順序 (A → Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 錯題卡片容器 -->
+      <div class="wrong-words-grid" id="wrongWordsContainer">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+    </section>
+
+    <!-- ==================== 5. 單字卡瀏覽 & 題庫管理 (Flashcards & Words) ==================== -->
+    <section class="tab-panel" id="tab-flashcards">
+      <div class="subtab-bar">
+        <button class="subtab-btn active" data-subtab="fc-cards">🃏 3D 互動單字卡</button>
+        <button class="subtab-btn" data-subtab="fc-list">📚 完整題庫總覽與搜尋</button>
+        <button class="subtab-btn" data-subtab="fc-add">➕ 自訂新增單字</button>
+      </div>
+
+      <!-- 子分頁 5A: 3D 單字卡 -->
+      <div class="subtab-panel active" id="subtab-fc-cards">
+        <div class="card fc-filter-bar">
+          <div class="fc-filters">
+            <select id="fcCategorySelect" class="form-control form-control-sm">
+              <option value="ALL">📂 全部主題分類</option>
+              <option value="WRONG_ONLY">📕 僅顯示我的錯題本單字</option>
+              <option value="商務與合約">💼 商務與合約</option>
+              <option value="財務與會計">💰 財務與會計</option>
+              <option value="人事與職場">👥 人事與職場</option>
+              <option value="行銷與銷售">📣 行銷與銷售</option>
+              <option value="旅遊與交通">✈️ 旅遊與交通</option>
+              <option value="科技與製造">⚙️ 科技與製造</option>
+            </select>
+            <select id="fcLevelSelect" class="form-control form-control-sm">
+              <option value="ALL">📊 全部難度</option>
+              <option value="600分基礎">🟢 600分基礎</option>
+              <option value="750分進階">🔵 750分進階</option>
+              <option value="860分高分">🟣 860分高分</option>
+            </select>
+            <button class="btn btn-sm btn-outline" id="fcShuffleBtn">🔀 隨機洗牌</button>
+          </div>
+          <div class="fc-counter" id="fcCounterText">第 1 / 80 張</div>
+        </div>
+
+        <div class="flashcard-stage">
+          <div class="flashcard-3d" id="flashcard3d">
+            <div class="flashcard-inner" id="flashcardInner">
+              <!-- 正面 -->
+              <div class="flashcard-face flashcard-front">
+                <div class="fc-top-badges">
+                  <span class="badge badge-category" id="fcFrontCategory">商務與合約</span>
+                  <span class="badge badge-level" id="fcFrontLevel">750分進階</span>
+                  <span class="badge badge-danger hidden" id="fcFrontWrongTag">📕 錯題本單字</span>
+                </div>
+                <div class="fc-center-content">
+                  <h2 class="fc-word" id="fcFrontWord">accommodate</h2>
+                  <div class="fc-phonetic-row">
+                    <span id="fcFrontPhonetic">/əˈkɑːmədeɪt/</span>
+                    <span class="pos-tag" id="fcFrontPos">v.</span>
+                    <button class="btn-audio-sm" id="fcSpeakFrontBtn" title="發音 (快捷鍵 S)">🔊</button>
+                  </div>
+                </div>
+                <div class="fc-flip-hint">👆 點擊卡片或按 <kbd>空白鍵 Space</kbd> 翻看中文解釋與多益例句</div>
+              </div>
+
+              <!-- 背面 -->
+              <div class="flashcard-face flashcard-back">
+                <div class="fc-top-badges">
+                  <span class="fc-back-word-head" id="fcBackWordHead">accommodate /əˈkɑːmədeɪt/ (v.)</span>
+                  <button class="btn-audio-sm" id="fcSpeakBackBtn" title="朗讀例句">🔊 朗讀</button>
+                </div>
+                <div class="fc-back-body">
+                  <div class="fc-meaning" id="fcBackMeaning">容納；配合；提供住宿</div>
+                  <div class="fc-synonyms" id="fcBackSynonyms">同義字：house, adapt, fit</div>
+                  <div class="fc-example-box">
+                    <p class="fc-example-en" id="fcBackExample">
+                      The new conference hall can accommodate up to 500 guests comfortably.
+                    </p>
+                    <p class="fc-example-zh" id="fcBackTranslation">
+                      新的會議廳可以舒適地容納多達 500 位賓客。
+                    </p>
+                  </div>
+                </div>
+                <div class="fc-flip-hint">👆 點擊卡片翻回正面</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flashcard-controls">
+            <button class="btn btn-outline btn-lg" id="fcPrevBtn">⬅️ 上一張 (←)</button>
+            <button class="btn btn-outline btn-lg" id="fcFlipBtn">🔄 翻面 (Space)</button>
+            <button class="btn btn-outline btn-lg" id="fcSpeakWordBtn">🔊 發音 (S)</button>
+            <button class="btn btn-warning btn-lg" id="fcToggleWrongBtn">⭐ 加入錯題本 (B)</button>
+            <button class="btn btn-primary btn-lg" id="fcNextBtn">下一張 (→) ➡️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 子分頁 5B: 完整題庫總覽 -->
+      <div class="subtab-panel" id="subtab-fc-list">
+        <div class="card">
+          <div class="list-toolbar">
+            <input
+              type="text"
+              id="vocabSearchInput"
+              class="form-control"
+              placeholder="🔍 搜尋單字、中文解釋、同義字或例句關鍵字..."
+            />
+            <select id="vocabCategoryFilter" class="form-control">
+              <option value="ALL">全部主題</option>
+              <option value="商務與合約">商務與合約</option>
+              <option value="財務與會計">財務與會計</option>
+              <option value="人事與職場">人事與職場</option>
+              <option value="行銷與銷售">行銷與銷售</option>
+              <option value="旅遊與交通">旅遊與交通</option>
+              <option value="科技與製造">科技與製造</option>
+            </select>
+            <select id="vocabLevelFilter" class="form-control">
+              <option value="ALL">全部難度</option>
+              <option value="600分基礎">600分基礎</option>
+              <option value="750分進階">750分進階</option>
+              <option value="860分高分">860分高分</option>
+            </select>
+          </div>
+          <div class="vocab-count-info" id="vocabListCountInfo">共顯示 80 個單字</div>
+          <div class="vocab-table-wrapper">
+            <table class="vocab-table">
+              <thead>
+                <tr>
+                  <th>單字 / 音標</th>
+                  <th>詞性 &amp; 中文解釋</th>
+                  <th>多益商務例句 &amp; 中譯</th>
+                  <th>分類 / 難度</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="vocabTableBody">
+                <!-- JS 動態渲染 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 子分頁 5C: 自訂新增單字 -->
+      <div class="subtab-panel" id="subtab-fc-add">
+        <div class="card">
+          <div class="card-header">
+            <h3>➕ 新增自訂多益單字至伺服器題庫</h3>
+            <p class="text-muted">新增的單字會儲存在資料庫中，並自動納入四選一測驗、聽力拼字與單字卡複習範圍</p>
+          </div>
+          <form id="addCustomWordForm" class="custom-word-form">
+            <div class="setup-form-grid">
+              <div class="form-group">
+                <label for="cwWord">英文單字 *</label>
+                <input type="text" id="cwWord" class="form-control" placeholder="例如：remuneration" required />
+              </div>
+              <div class="form-group">
+                <label for="cwPos">詞性 *</label>
+                <select id="cwPos" class="form-control">
+                  <option value="n.">n. (名詞)</option>
+                  <option value="v.">v. (動詞)</option>
+                  <option value="adj.">adj. (形容詞)</option>
+                  <option value="adv.">adv. (副詞)</option>
+                  <option value="phr.">phr. (片語)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cwPhonetic">音標（選填）</label>
+                <input type="text" id="cwPhonetic" class="form-control" placeholder="例如：/rɪˌmjuːnəˈreɪʃn/" />
+              </div>
+              <div class="form-group">
+                <label for="cwMeaning">中文解釋 *</label>
+                <input type="text" id="cwMeaning" class="form-control" placeholder="例如：報酬；薪資；酬勞" required />
+              </div>
+              <div class="form-group">
+                <label for="cwCategory">主題分類</label>
+                <select id="cwCategory" class="form-control">
+                  <option value="商務與合約">商務與合約</option>
+                  <option value="財務與會計">財務與會計</option>
+                  <option value="人事與職場">人事與職場</option>
+                  <option value="行銷與銷售">行銷與銷售</option>
+                  <option value="旅遊與交通">旅遊與交通</option>
+                  <option value="科技與製造">科技與製造</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cwLevel">難度等級</label>
+                <select id="cwLevel" class="form-control">
+                  <option value="600分基礎">600分基礎</option>
+                  <option value="750分進階" selected>750分進階</option>
+                  <option value="860分高分">860分高分</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cwSynonyms">同義字（選填）</label>
+                <input type="text" id="cwSynonyms" class="form-control" placeholder="例如：compensation, payment, salary" />
+              </div>
+              <div class="form-group">
+                <label for="cwExample">英文例句（選填，建議包含該單字）</label>
+                <input
+                  type="text"
+                  id="cwExample"
+                  class="form-control"
+                  placeholder="例如：The executive received generous remuneration for his performance."
+                />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="cwTranslation">例句中文翻譯（選填）</label>
+              <input
+                type="text"
+                id="cwTranslation"
+                class="form-control"
+                placeholder="例如：該名主管因其優異表現獲得了豐厚的酬勞。"
+              />
+            </div>
+            <div style="margin-top: 18px;">
+              <button type="submit" class="btn btn-primary btn-lg">💾 儲存並加入題庫</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== 登入 / 註冊 彈跳視窗 (Auth Modal) ==================== -->
+  <div class="modal-backdrop hidden" id="authModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-logo">🎯</span>
+          <div>
+            <h3>學員帳號登入與註冊</h3>
+            <p class="text-muted">登入後即可跨測驗保存個人成績與專屬錯題本</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeAuthModalBtn" title="關閉">✕</button>
+      </div>
+
+      <!-- 一鍵體驗按鈕 -->
+      <div class="demo-login-banner">
+        <div>
+          <strong>⚡ 想立即體驗完整錯題本功能？</strong>
+          <p>可使用內建示範帳號（已預載測驗紀錄與 3 筆錯題範例）</p>
+        </div>
+        <button type="button" class="btn btn-warning" id="demoQuickLoginBtn">
+          一鍵登入示範帳號
+        </button>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-auth-tab="login">登入現有帳號</button>
+        <button class="auth-tab" data-auth-tab="register">註冊新學員帳號</button>
+      </div>
+
+      <div id="authErrorAlert" class="alert alert-danger hidden"></div>
+
+      <!-- 登入表單 -->
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="loginUsername">帳號 (Username)</label>
+          <input
+            type="text"
+            id="loginUsername"
+            class="form-control"
+            placeholder="請輸入帳號（例如 demo）"
+            value="demo"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密碼 (Password)</label>
+          <input
+            type="password"
+            id="loginPassword"
+            class="form-control"
+            placeholder="請輸入密碼（demo 密碼為 123456）"
+            value="123456"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">
+          🔐 登入系統
+        </button>
+      </form>
+
+      <!-- 註冊表單 -->
+      <form id="registerForm" class="auth-form hidden">
+        <div class="form-group">
+          <label for="regUsername">設定帳號 (至少 2 個字元) *</label>
+          <input
+            type="text"
+            id="regUsername"
+            class="form-control"
+            placeholder="例如：alex_toeic"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="regDisplayName">顯示暱稱 *</label>
+          <input
+            type="text"
+            id="regDisplayName"
+            class="form-control"
+            placeholder="例如：Alex 王小明"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">設定密碼 (至少 4 個字元) *</label>
+          <input
+            type="password"
+            id="regPassword"
+            class="form-control"
+            placeholder="請輸入至少 4 位數密碼"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="regTargetScore">目標多益分數</label>
+          <select id="regTargetScore" class="form-control">
+            <option value="600">600 分（綠色證書基礎目標）</option>
+            <option value="750">750 分（藍色證書商務門檻）</option>
+            <option value="860" selected>860 分（金色證書高分目標）</option>
+            <option value="950">950+ 分（滿分頂尖挑戰）</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">
+          ✨ 立即註冊並登入
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast 通知容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 載入內建題庫與主程式 -->
+  <script src="words-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
