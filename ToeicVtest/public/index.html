@@ -271,6 +271,16 @@
             </button>
           </div>
           <div class="question-sub" id="mcQuestionSub">/əˈkɑːmədeɪt/ (v.)</div>
+          <!-- 中文提示隱藏選單 -->
+          <div class="hint-dropdown-wrap hidden" id="mcHintDropdownWrap">
+            <button type="button" class="hint-toggle-btn" id="mcToggleHintBtn">
+              <span id="mcHintBtnText">💡 展開中文提示 (H)</span>
+              <span class="hint-arrow" id="mcHintArrow">▾</span>
+            </button>
+            <div class="hint-dropdown-content hidden" id="mcHintContent">
+              <span id="mcHintText"></span>
+            </div>
+          </div>
         </div>
 
         <!-- 選項區 -->
@@ -394,18 +404,27 @@
             </button>
           </div>
 
-          <div class="spelling-meaning-box">
-            <span class="pos-tag" id="spPosTag">v.</span>
-            <span class="meaning-text" id="spMeaningText">報銷；償還；核銷（差旅費等）</span>
-          </div>
-
           <div class="spelling-sentence-box">
             <p class="sentence-en" id="spSentenceEn">
               Please keep all original receipts so the company can <span class="blank-slot">_______</span> your travel expenses.
             </p>
-            <p class="sentence-zh" id="spSentenceZh">
-              請保留所有收據正本，以便公司核銷您的差旅費用。
-            </p>
+          </div>
+
+          <!-- 聽力拼字中文提示隱藏選單 -->
+          <div class="hint-dropdown-wrap" id="spHintDropdownWrap">
+            <button type="button" class="hint-toggle-btn" id="spToggleChineseBtn">
+              <span id="spHintBtnText">💡 展開中文提示（釋義與中譯） (H)</span>
+              <span class="hint-arrow" id="spHintArrow">▾</span>
+            </button>
+            <div class="hint-dropdown-content hidden" id="spHintContent">
+              <div class="spelling-meaning-box">
+                <span class="pos-tag" id="spPosTag">v.</span>
+                <span class="meaning-text" id="spMeaningText">報銷；償還；核銷（差旅費等）</span>
+              </div>
+              <p class="sentence-zh" id="spSentenceZh">
+                請保留所有收據正本，以便公司核銷您的差旅費用。
+              </p>
+            </div>
           </div>
 
           <div class="spelling-hint-bar" id="spHintBar">

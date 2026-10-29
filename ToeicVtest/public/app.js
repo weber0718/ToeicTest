@@ -737,22 +737,26 @@
     let stemHtml = '';
     let subText = '';
     let modeBadge = '';
+    let chineseHint = '';
 
     if (actualMode === 'en-zh') {
       modeBadge = '英翻中';
       promptLabel = '請選出下列多益單字的正確中文解釋：';
       stemHtml = escapeHtml(targetWord.word);
       subText = `${targetWord.phonetic} (${targetWord.pos})`;
+      chineseHint = `例句中譯提示：${targetWord.translation}`;
     } else if (actualMode === 'zh-en') {
       modeBadge = '中翻英';
       promptLabel = '請根據中文釋義，選出對應的英文單字：';
       stemHtml = escapeHtml(targetWord.meaning);
       subText = `詞性提示：${targetWord.pos}｜主題：${targetWord.category}`;
+      chineseHint = `例句中譯提示：${targetWord.translation}`;
     } else {
       modeBadge = '多益 Part 5 例句填空';
       promptLabel = '請選出最適合填入空格的多益單字：';
       stemHtml = maskWordInSentence(escapeHtml(targetWord.example), targetWord.word);
-      subText = `中譯提示：${targetWord.translation}`;
+      subText = `詞性：${targetWord.pos}｜主題：${targetWord.category}`;
+      chineseHint = `例句中譯提示：${targetWord.translation}`;
     }
 
     const options = optionsWords.map((w) => ({
@@ -772,6 +776,7 @@
       promptLabel,
       stemHtml,
       subText,
+      chineseHint,
       options
     };
   }
@@ -866,6 +871,25 @@
     stemEl.className =
       q.actualMode === 'sentence' ? 'question-stem sentence-stem' : 'question-stem';
     document.getElementById('mcQuestionSub').textContent = q.subText;
+
+    // 重設四選一中文提示隱藏選單
+    const mcHintWrap = document.getElementById('mcHintDropdownWrap');
+    const mcHintContent = document.getElementById('mcHintContent');
+    const mcHintBtn = document.getElementById('mcToggleHintBtn');
+    const mcHintBtnText = document.getElementById('mcHintBtnText');
+    const mcHintArrow = document.getElementById('mcHintArrow');
+    const mcHintText = document.getElementById('mcHintText');
+
+    if (q.chineseHint) {
+      mcHintWrap.classList.remove('hidden');
+      mcHintContent.classList.add('hidden');
+      mcHintBtn.classList.remove('active');
+      mcHintBtnText.textContent = '💡 展開中文提示 (H)';
+      mcHintArrow.textContent = '▾';
+      mcHintText.textContent = q.chineseHint;
+    } else {
+      mcHintWrap.classList.add('hidden');
+    }
 
     const optionsContainer = document.getElementById('mcOptionsContainer');
     optionsContainer.innerHTML = q.options
@@ -1092,6 +1116,16 @@
       w.word
     );
     document.getElementById('spSentenceZh').textContent = w.translation;
+
+    // 重設聽力拼字中文提示隱藏選單（預設收合）
+    const spContent = document.getElementById('spHintContent');
+    const spBtn = document.getElementById('spToggleChineseBtn');
+    const spBtnText = document.getElementById('spHintBtnText');
+    const spArrow = document.getElementById('spHintArrow');
+    spContent.classList.add('hidden');
+    spBtn.classList.remove('active');
+    spBtnText.textContent = '💡 展開中文提示（釋義與中譯） (H)';
+    spArrow.textContent = '▾';
 
     const blankPattern = Array(w.word.length).fill('_').join(' ');
     document.getElementById('spHintPattern').textContent = `${blankPattern} (${w.word.length} 個字母)`;
@@ -1776,6 +1810,18 @@
       if (q) speakText(q.targetWord.word);
     });
 
+    // 四選一中文提示隱藏選單切換
+    document.getElementById('mcToggleHintBtn').addEventListener('click', () => {
+      const content = document.getElementById('mcHintContent');
+      const btn = document.getElementById('mcToggleHintBtn');
+      const btnText = document.getElementById('mcHintBtnText');
+      const arrow = document.getElementById('mcHintArrow');
+      const isHidden = content.classList.toggle('hidden');
+      btn.classList.toggle('active', !isHidden);
+      btnText.textContent = isHidden ? '💡 展開中文提示 (H)' : '🙈 隱藏中文提示 (H)';
+      arrow.textContent = isHidden ? '▾' : '▴';
+    });
+
     document.getElementById('mcNextQuestionBtn').addEventListener('click', () => {
       const qz = state.mcQuiz;
       if (qz.currentIndex + 1 < qz.questions.length) {
@@ -1805,6 +1851,18 @@
     // 聽力拼字事件
     document.getElementById('startSpQuizBtn').addEventListener('click', startSpQuiz);
     document.getElementById('spSubmitForm').addEventListener('submit', handleSpSubmit);
+
+    // 聽力拼字中文提示隱藏選單切換
+    document.getElementById('spToggleChineseBtn').addEventListener('click', () => {
+      const content = document.getElementById('spHintContent');
+      const btn = document.getElementById('spToggleChineseBtn');
+      const btnText = document.getElementById('spHintBtnText');
+      const arrow = document.getElementById('spHintArrow');
+      const isHidden = content.classList.toggle('hidden');
+      btn.classList.toggle('active', !isHidden);
+      btnText.textContent = isHidden ? '💡 展開中文提示（釋義與中譯） (H)' : '🙈 隱藏中文提示 (H)';
+      arrow.textContent = isHidden ? '▾' : '▴';
+    });
     document.getElementById('spPlayNormalBtn').addEventListener('click', () => {
       const w = state.spQuiz.questions[state.spQuiz.currentIndex];
       if (w) speakText(w.word, 1.0, state.spQuiz.accent);
@@ -2137,11 +2195,17 @@
           document.getElementById('mcNextQuestionBtn').click();
         } else if (e.key.toLowerCase() === 's') {
           document.getElementById('mcSpeakBtn').click();
+        } else if (e.key.toLowerCase() === 'h') {
+          e.preventDefault();
+          document.getElementById('mcToggleHintBtn').click();
         }
-      } else if (state.activeTab === 'spelling-quiz' && state.spQuiz.active && state.spQuiz.answered) {
-        if (e.key === 'Enter') {
+      } else if (state.activeTab === 'spelling-quiz' && state.spQuiz.active) {
+        if (state.spQuiz.answered && e.key === 'Enter') {
           e.preventDefault();
           document.getElementById('spNextQuestionBtn').click();
+        } else if (e.key.toLowerCase() === 'h') {
+          e.preventDefault();
+          document.getElementById('spToggleChineseBtn').click();
         }
       } else if (
         state.activeTab === 'flashcards' &&
